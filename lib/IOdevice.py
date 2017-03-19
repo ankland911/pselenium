@@ -1,8 +1,6 @@
 # -*- coding: UTF-8 -*-
 from Linker import Linker
-# from Queue import Queue
-from selenium.webdriver.common.action_chains import ActionChains
-from lib.core.MyDb import MyDb
+from lib.MyDb import MyDb
 import os
 db_owner = {"host":"localhost","user":"root","pass":"","db":"ankland911"}
 class IOdevice(Linker):
@@ -13,7 +11,8 @@ class IOdevice(Linker):
 	def __init__(self):
 		Linker.__init__(self)
 		self.mode = 0 
-		if(self.mydb = MyDb(db_owner)==False):
+		self.mydb = MyDb(db_owner)
+		if(self.mydb==False):
 			print "MySql Initiation make some errors!"
 				
 	def quit(self):
