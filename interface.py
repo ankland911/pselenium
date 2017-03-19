@@ -55,10 +55,11 @@ class ftp_client(object):
 
 if __name__ == '__main__':
 	data = {}
+	where = {}
 	app = interface()
 	ftp = ftp_client()
 	db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"})
-	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links")
+	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links limit 5")
 	for article_link in article_links:
 		print "start article id=%s" % article_link[1]
 		app.Get(article_link[0])
@@ -68,8 +69,10 @@ if __name__ == '__main__':
 		file_handle = open("jiongtu/%s" % image_name,"r")
 		ftp.ftp_upload(file_handle,image_name)
 		data['imagepath'] = '/Public/jiongtu/%s' % image_name
-		
-		db.Model('article_links').where('article_id=\'%s\'' % article_link[1]).update(data)
+		where['article_id'] = article_link[1]
+		rs = db.Model('article_links').where(where).update(data)
+		print "result : %s" % rs
+		print db.Model('article_links').option['lastsql']
 
 	#print app.get_article_image()
 	
