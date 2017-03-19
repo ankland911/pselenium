@@ -126,5 +126,5 @@ class Model:
 			print str(e)
 
 
-app = MyDb({"host":"localhost","user":"root","pass":"","db":"ankland911"})
-rs = app.Model('categorys').where('id=0').update({'title':'test1','detail':'test1'})
+#app = MyDb({"host":"localhost","user":"root","pass":"","db":"ankland911"})
+#rs = app.Model('categorys').where('id=0').update({'title':'test1','detail':'test1'})
