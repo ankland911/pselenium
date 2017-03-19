@@ -12,11 +12,15 @@ class interface(Linker):
 
 	def get_article_title(self):
 		element_title = self.webbrowser.find_element_by_class_name("title").find_element_by_tag_name("h1")
-		return element_title.text
+		title = element_title.text
+		print title
+		return title
 
 	def get_article_description(self):
 		element_description = self.webbrowser.find_element_by_class_name("detailTxt").find_element_by_tag_name("p")
-		return element_description.text
+		description = element_description.text
+		print description
+		return description
 
 	def get_article_image(self):
 		element_title_image = self.webbrowser.find_element_by_class_name("detailTxt").find_element_by_tag_name("img")
@@ -36,7 +40,7 @@ class interface(Linker):
 class ftp_client(object):
 	def __init__(self):
 		self.ftp = FTP()
-		self.ftp.set_debuglevel(2)
+		#self.ftp.set_debuglevel(2)
 		self.ftp.connect("ankland911.gotoip3.com","21")
 		self.ftp.login("ankland911","kuailong88")
 		print self.ftp.getwelcome()
@@ -53,9 +57,10 @@ if __name__ == '__main__':
 	data = {}
 	app = interface()
 	ftp = ftp_client()
-	db = MyDb({"host":"localhost","user":"root","pass":"toor","db":"ankland911"})
-	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links limit 5")
+	db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"})
+	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links")
 	for article_link in article_links:
+		print "start article id=%s" % article_link[1]
 		app.Get(article_link[0])
 		data['detail']=app.get_article_description()
 		data['title']=app.get_article_title()
