@@ -1,15 +1,14 @@
 # -*- coding: UTF-8 -*- 
 from selenium import webdriver
-import sys,os,time,threading
-# from bs4 import BeautifulSoup
-from selenium.common.exceptions import TimeoutException
+import sys,os
 
 class Linker(object):
 
 	def __init__(self):
-		iedriver = "C:\Python27\Scripts\IEDriverServer.exe"
-		os.environ["webdriver.ie.driver"] = iedriver
-		self.webbrowser = webdriver.Ie(iedriver)
+		#iedriver = "C:\Python27\Scripts\IEDriverServer.exe"
+		#os.environ["webdriver.ie.driver"] = iedriver
+		#self.webbrowser = webdriver.Ie(iedriver)
+		self.webbrowser = webdriver.Firefox()
 
 	def quit(self):
 		self.webbrowser.quit()
@@ -19,8 +18,6 @@ class Linker(object):
 		try:
 			self.webbrowser.get(url)
 			self.webbrowser.implicitly_wait(5)
-		except TimeoutException as e:
-			print str(e)
 		except Exception as e:
 			print str(e)
 
