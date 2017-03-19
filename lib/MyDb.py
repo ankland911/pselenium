@@ -115,7 +115,7 @@ class Model:
 		try:
 		 	rs = self.mydb.Cursor.execute(sql)
 			self.WHERE = ""
-			self.FIELD = ""
+			self.FIELD = "*"
 			return rs
 		except MySQLdb.Error as e:
 			if 'MySQL server has gone away' in str(e):
