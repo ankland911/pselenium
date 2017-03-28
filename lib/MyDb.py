@@ -3,12 +3,14 @@ import MySQLdb
 
 class MyDb:
 	model = {}
-	def __init__(self,db_owner):
+	def __init__(self,db_owner,error_notice):
 		self.db_owner = db_owner
+		self.notice_ins = error_notice
 		try:			
 			self.Db = MySQLdb.connect(host=db_owner["host"],user=db_owner["user"],passwd=db_owner["pass"],db=db_owner["db"],charset="utf8")
 			self.Cursor = self.Db.cursor()
-			print "initial:     create a MyDb instance OK..."
+			self.notice_ins.print_notice('initial','create a MyDb instance OK...')
+			# print "initial:     create a MyDb instance OK..."
 		except Exception, e:
 			print e
 	def Model(self,model_name):
