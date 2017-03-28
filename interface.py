@@ -131,6 +131,7 @@ if __name__ == '__main__':
 	error_notice = STATE_NOTICE()
 	app = interface(error_notice)
 	ftp = ftp_client(error_notice)
+	mytime = Time()
 	db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"},error_notice)
 	# step 1:
 	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links limit 1")
