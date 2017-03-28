@@ -4,6 +4,15 @@ from lib.Linker import Linker
 from lib.MyDb import MyDb
 import urllib2
 from ftplib import FTP
+import time
+
+class Time(Object):
+	def __init__(self):
+		self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+	def time(self):
+		return self.time
+	def now(self):
+		return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 class STATE_NOTICE():
 	def __init__(self):
@@ -172,7 +181,11 @@ if __name__ == '__main__':
 						rs = db.Model('detailtxt').insert(detail)
 						error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
 					elif(detail['type']=='img'):
-						rs = db.Model('downimage').insert(detail)
+						downimage={}
+						downimage['detail_id']=detail['detail_id']
+						downimage['detail']=detail['detail']
+						error_notice.print_notice('detail_r',str(downimage))
+						rs = db.Model('downimage').insert(downimage)
 						error_notice.print_notice('result',"do get downimage result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 						error_notice.print_notice('lastsql',db.Model('downimage').option['lastsql'])
 						detail['detail']= ''
