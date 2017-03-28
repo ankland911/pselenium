@@ -43,21 +43,23 @@ class interface(Linker):
 		return description
 
 	def get_article_image(self):
-		element_title_image = self.webbrowser.find_element_by_class_name("detailTxt").find_element_by_tag_name("img")
+		element_title_image = self.webbrowser.find_element_by_class_name('detailTxt').find_element_by_tag_name('img')
 		self.notice_ins.print_notice('article','get_article_image')
 		return element_title_image.get_attribute("src")
 
 
 	def GetDetail(self,pageid):
 		Details=[]
-		lists=self.webbrowser.find_element_by_class_name("detailTxt").find_elements_by_tag_name("p")
+		lists=self.webbrowser.find_element_by_class_name('detailTxt').find_elements_by_tag_name('p')
 		for D in lists:
 			try:
-				Details.append({'page_id':pageid,'type':'img','detail':D.find_element_by_tag_name("img").get_attribute("src")})
-			except Exception:
-				if(D.text==''):
-					continue
-				Details.append({'type':'txt','Page_id':pageid,'detail':D.text})
+				Details.append({'Page_id':pageid,'type':'img','detail':D.find_element_by_tag_name('img').get_attribute("src")})
+			except Exception,e:
+				self.notice_ins.print_notice('GetDetailErr',str(e).replace('\n',''))
+				if("Unable to find element" in str(e)):
+					if(D.text==''):
+						continue
+					Details.append({'type':'txt','Page_id':pageid,'detail':D.text})
 		return Details
 
 	def GetPages(self,article_id):
@@ -85,7 +87,8 @@ class interface(Linker):
 		name = name[len(name)-1]
 		with open("jiongtu/%s" % name, "wb") as f:
 			f.write(response.read())
-		print("link:"+link+" file:"+name)
+		self.notice_ins.print_notice('get_picture',link+';'+name)
+		# print("link:"+link+" file:"+name)
 		return name
 
 class ftp_client(object):
@@ -149,6 +152,7 @@ if __name__ == '__main__':
 
 		for page in pages:
 			error_notice.print_notice('start',("page_id=%s" % page[1]))
+			app.Get(page[0])
 			# print "   start:    page_id=%s" % page[1]
 			# self.notice_ins.print_notice('start',('page_id=%s' % page[1]))
 
@@ -160,16 +164,21 @@ if __name__ == '__main__':
 				detailtxts=[]
 				details = app.GetDetail(page[1])
 				for detail in details:
+					error_notice.print_notice('detail_r',str(detail))
 					rs = db.Model('detailtxt').field('max(detail_id)').select()
 					max_detail_id = int(rs[0][0])
 					detail['detail_id'] = str(max_detail_id+10).zfill(8)
 					if(detail['type']=='txt'):
 						rs = db.Model('detailtxt').insert(detail)
+						error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
 					elif(detail['type']=='img'):
 						rs = db.Model('downimage').insert(detail)
+						error_notice.print_notice('result',"do get downimage result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
+						error_notice.print_notice('lastsql',db.Model('downimage').option['lastsql'])
 						detail['detail']= ''
 						rs = db.Model('detailtxt').insert(detail)
 					error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
+					error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
 					detailtxts.append([unicode(detail['detail_id']),unicode(detail['type'])])
 
 			sort_id = 1
