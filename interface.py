@@ -6,11 +6,11 @@ import urllib2
 from ftplib import FTP
 import time
 
-class Time(Object):
+class Time(object):
 	def __init__(self):
-		self.time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-	def time(self):
-		return self.time
+		self.thistime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+	def mtime(self):
+		return self.thistime
 	def now(self):
 		return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
@@ -18,10 +18,14 @@ class STATE_NOTICE():
 	def __init__(self):
 		self.type=""
 		self.info=""
+		self.contral = 40
 	def print_notice(self,etype,einfo):
-		self.type = etype
-		self.info = einfo
-		print("%12s:    %s" % (self.type,self.info))
+		length = len(self.info)
+		if(length<self.contral):
+			print("%12s:  %s" % (etype,einfo))
+		else:
+			print("%12s:  %s" % (etype,einfo[:40]))
+			self.print_notice('',einfo[40:])
 
 
 
@@ -124,6 +128,22 @@ class ftp_client(object):
 	def __del__(self):
 		self.ftp.quit()
 
+def check_detail(detailtxts,tid):
+	if(len(detailtxts)==0):
+		return 0
+	count_img = 0
+	count_txt = 0
+	for detailtxt in detailtxts:
+		if(detailtxt[tid]=='img'):
+			count_img = count_img +1
+		elif(detailtxt[tid]=='txt'):
+			count_txt = count_txt +1
+	if(count_txt==count_img):
+		return 1
+	else:
+		return -1
+
+
 if __name__ == '__main__':
 	# try:
 	data = {}
@@ -134,8 +154,8 @@ if __name__ == '__main__':
 	mytime = Time()
 	db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"},error_notice)
 	# step 1:
-	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links limit 1")
-
+	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links where day(\'%s\')-day(date)>10 or imagepath is null" % mytime.mtime())
+	# print db.Model("article_links").option['lastsql']
 	for article_link in article_links:
 		article_id = article_link[1]
 		error_notice.print_notice('start',("article id=%s" % article_id))
@@ -161,18 +181,19 @@ if __name__ == '__main__':
 
 
 		for page in pages:
-			error_notice.print_notice('start',("page_id=%s" % page[1]))
+			pageId = page[1]
+			error_notice.print_notice('start',("page_id=%s" % pageId))
 			app.Get(page[0])
-			# print "   start:    page_id=%s" % page[1]
-			# self.notice_ins.print_notice('start',('page_id=%s' % page[1]))
 
 			#step 3:
-			detailtxts = db.Model('detailtxt').SQL(("select detail_id,type from detailtxt where page_id=\'%s\'" % page[1]))	
-
-
-			if(detailtxts==()):
+			detailtxts = db.Model('detailtxt').SQL(("select detail_id,type from detailtxt where page_id=\'%s\'" % pageId))	
+			check_d = check_detail(detailtxts)
+			
+			if(check_d<1):
+				if(check_d==-1):
+					db.Model('detailtxt').SQL("delete from detailtxt where page_id=\'%s\'" % pageId)
 				detailtxts=[]
-				details = app.GetDetail(page[1])
+				details = app.GetDetail(pageId)
 				for detail in details:
 					error_notice.print_notice('detail_r',str(detail))
 					rs = db.Model('detailtxt').field('max(detail_id)').select()
@@ -197,10 +218,11 @@ if __name__ == '__main__':
 
 			sort_id = 1
 			for detailtxt in detailtxts:
-				error_notice.print_notice('start',("detail_id=%s" % detailtxt[0]))
+				detailId = detailtxt[0]
+				error_notice.print_notice('start',("detail_id=%s" % detailId))
 				# print "   start:    detail_id="+detailtxt[0]
 				where={}
-				where['detail_id'] = detailtxt[0]
+				where['detail_id'] = detailId
 				if(detailtxt[1]=='img'):
 					#step 4:
 					image = db.Model('downimage').where(where).field('detail').select()
@@ -213,7 +235,8 @@ if __name__ == '__main__':
 					data={}
 					data['path'] = '/Public/jiongtu/%s' % image_name_downimage
 					rs = db.Model('downimage').where(where).update(data)
-					print 'change downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path']
+					error_notice.print_notice('change','downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path'])
+					# print 'change downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path']
 		#print "result : %s" % rs
 		#print db.Model('article_links').option['lastsql']
 
