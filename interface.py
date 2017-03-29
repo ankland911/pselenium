@@ -18,14 +18,14 @@ class STATE_NOTICE():
 	def __init__(self):
 		self.type=""
 		self.info=""
-		self.contral = 40
+		self.contral = 120
 	def print_notice(self,etype,einfo):
-		length = len(self.info)
+		length = len(einfo)
 		if(length<self.contral):
 			print("%12s:  %s" % (etype,einfo))
 		else:
-			print("%12s:  %s" % (etype,einfo[:40]))
-			self.print_notice('',einfo[40:])
+			print("%12s:  %s" % (etype,einfo[:self.contral]))
+			self.print_notice('',einfo[self.contral:])
 
 
 
@@ -69,7 +69,7 @@ class interface(Linker):
 				Details.append({'Page_id':pageid,'type':'img','detail':D.find_element_by_tag_name('img').get_attribute("src")})
 			except Exception,e:
 				self.notice_ins.print_notice('GetDetailErr',str(e).replace('\n',''))
-				if("Unable to find element" in str(e)):
+				if("img" in str(e)):
 					if(D.text==''):
 						continue
 					Details.append({'type':'txt','Page_id':pageid,'detail':D.text})
@@ -145,110 +145,113 @@ def check_detail(detailtxts,tid):
 
 
 if __name__ == '__main__':
-	# try:
-	data = {}
-	where = {}
-	error_notice = STATE_NOTICE()
-	app = interface(error_notice)
-	ftp = ftp_client(error_notice)
-	mytime = Time()
-	db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"},error_notice)
-	# step 1:
-	article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links where day(\'%s\')-day(date)>10 or imagepath is null" % mytime.mtime())
-	# print db.Model("article_links").option['lastsql']
-	for article_link in article_links:
-		article_id = article_link[1]
-		error_notice.print_notice('start',("article id=%s" % article_id))
-		# print "   start:    article id=%s" % article_id
-		app.Get(article_link[0])
-		data['detail']=app.get_article_description()
-		data['title']=app.get_article_title()
-		image_name = app.get_picture(app.get_article_image())
-		file_handle = open("jiongtu/%s" % image_name,"r")
-		ftp.ftp_upload(file_handle,image_name)
-		data['imagepath'] = '/Public/jiongtu/%s' % image_name
-		where['article_id'] = article_id
-		rs = db.Model('article_links').where(where).update(data)
+	try:
+		data = {}
+		where = {}
+		error_notice = STATE_NOTICE()
+		app = interface(error_notice)
+		ftp = ftp_client(error_notice)
+		mytime = Time()
+		db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"},error_notice)
+		# step 1:
+		article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links where day(\'%s\')-day(date)>10 or imagepath is null" % mytime.mtime())
+		# print db.Model("article_links").option['lastsql']
+		for article_link in article_links:
+			article_id = article_link[1]
+			error_notice.print_notice('start',("article id=%s" % article_id))
+			# print "   start:    article id=%s" % article_id
+			app.Get(article_link[0])
+			data['detail']=app.get_article_description()
+			data['title']=app.get_article_title()
+			image_name = app.get_picture(app.get_article_image())
+			file_handle = open("jiongtu/%s" % image_name,"r")
+			ftp.ftp_upload(file_handle,image_name)
+			data['imagepath'] = '/Public/jiongtu/%s' % image_name
+			where['article_id'] = article_id
+			data['date'] = mytime.mtime()
+			rs = db.Model('article_links').where(where).update(data)
 
-		# step 2:
-		pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\'" % article_id))
-		if(pages==()):
-			rs = app.GetPages(article_id)
-			for r in rs:
-				rs = db.Model('pages').insert(r)
-				error_notice.print_notice('insertPages',r['page_id'])
+			# step 2:
 			pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\'" % article_id))
+			if(pages==()):
+				rs = app.GetPages(article_id)
+				for r in rs:
+					rs = db.Model('pages').insert(r)
+					error_notice.print_notice('insertPages',r['page_id'])
+				pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\'" % article_id))
 
 
-		for page in pages:
-			pageId = page[1]
-			error_notice.print_notice('start',("page_id=%s" % pageId))
-			app.Get(page[0])
+			for page in pages:
+				pageId = page[1]
+				error_notice.print_notice('start',("page_id=%s" % pageId))
+				app.Get(page[0])
 
-			#step 3:
-			detailtxts = db.Model('detailtxt').SQL(("select detail_id,type from detailtxt where page_id=\'%s\'" % pageId))	
-			check_d = check_detail(detailtxts)
-			
-			if(check_d<1):
-				if(check_d==-1):
-					db.Model('detailtxt').SQL("delete from detailtxt where page_id=\'%s\'" % pageId)
-				detailtxts=[]
-				details = app.GetDetail(pageId)
-				for detail in details:
-					error_notice.print_notice('detail_r',str(detail))
-					rs = db.Model('detailtxt').field('max(detail_id)').select()
-					max_detail_id = int(rs[0][0])
-					detail['detail_id'] = str(max_detail_id+10).zfill(8)
-					if(detail['type']=='txt'):
-						rs = db.Model('detailtxt').insert(detail)
+				#step 3:
+				detailtxts = db.Model('detailtxt').SQL(("select detail_id,type from detailtxt where page_id=\'%s\'" % pageId))	
+				check_d = check_detail(detailtxts,1)
+				
+				if(check_d<1):
+					if(check_d==-1):
+						db.Model('detailtxt').SQL("delete from detailtxt where page_id=\'%s\'" % pageId)
+					detailtxts=[]
+					details = app.GetDetail(pageId)
+					for detail in details:
+						error_notice.print_notice('detail_r',str(detail))
+						rs = db.Model('detailtxt').field('max(detail_id)').select()
+						max_detail_id = int(rs[0][0])
+						detail['detail_id'] = str(max_detail_id+10).zfill(8)
+						if(detail['type']=='txt'):
+							rs = db.Model('detailtxt').insert(detail)
+							error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
+						elif(detail['type']=='img'):
+							downimage={}
+							downimage['detail_id']=detail['detail_id']
+							downimage['detail']=detail['detail']
+							error_notice.print_notice('detail_r',str(downimage))
+							rs = db.Model('downimage').insert(downimage)
+							error_notice.print_notice('result',"do get downimage result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
+							error_notice.print_notice('lastsql',db.Model('downimage').option['lastsql'])
+							detail['detail']= ''
+							rs = db.Model('detailtxt').insert(detail)
+						error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 						error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
-					elif(detail['type']=='img'):
-						downimage={}
-						downimage['detail_id']=detail['detail_id']
-						downimage['detail']=detail['detail']
-						error_notice.print_notice('detail_r',str(downimage))
-						rs = db.Model('downimage').insert(downimage)
-						error_notice.print_notice('result',"do get downimage result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
-						error_notice.print_notice('lastsql',db.Model('downimage').option['lastsql'])
-						detail['detail']= ''
-						rs = db.Model('detailtxt').insert(detail)
-					error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
-					error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
-					detailtxts.append([unicode(detail['detail_id']),unicode(detail['type'])])
+						detailtxts.append([unicode(detail['detail_id']),unicode(detail['type'])])
 
-			sort_id = 1
-			for detailtxt in detailtxts:
-				detailId = detailtxt[0]
-				error_notice.print_notice('start',("detail_id=%s" % detailId))
-				# print "   start:    detail_id="+detailtxt[0]
-				where={}
-				where['detail_id'] = detailId
-				if(detailtxt[1]=='img'):
-					#step 4:
-					image = db.Model('downimage').where(where).field('detail').select()
-					if(image==()):
-						pass
-					link_downimage = image[0][0]
-					image_name_downimage = app.get_picture(link_downimage)
-					file_handle = open("jiongtu/%s" % image_name_downimage,"r")
-					ftp.ftp_upload(file_handle,image_name_downimage)
-					data={}
-					data['path'] = '/Public/jiongtu/%s' % image_name_downimage
-					rs = db.Model('downimage').where(where).update(data)
-					error_notice.print_notice('change','downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path'])
-					# print 'change downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path']
-		#print "result : %s" % rs
-		#print db.Model('article_links').option['lastsql']
+				sort_id = 1
+				for detailtxt in detailtxts:
+					detailId = detailtxt[0]
+					error_notice.print_notice('start',("detail_id=%s" % detailId))
+					# print "   start:    detail_id="+detailtxt[0]
+					where={}
+					where['detail_id'] = detailId
+					if(detailtxt[1]=='img'):
+						#step 4:
+						image = db.Model('downimage').where(where).field('detail').select()
+						if(image==()):
+							pass
+						link_downimage = image[0][0]
+						image_name_downimage = app.get_picture(link_downimage)
+						file_handle = open("jiongtu/%s" % image_name_downimage,"r")
+						ftp.ftp_upload(file_handle,image_name_downimage)
+						data={}
+						data['path'] = '/Public/jiongtu/%s' % image_name_downimage
+						rs = db.Model('downimage').where(where).update(data)
+						error_notice.print_notice('change','downimage path:'+str(rs) + '  '+detailtxt[0]+'   '+data['path'])
+						# print 'change downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path']
+			#print "result : %s" % rs
+			#print db.Model('article_links').option['lastsql']
 
-	#print app.get_article_image()
-	
-	app.quit()
-	del db
-	del ftp
-	raw_input()
-	# except Exception, e:
-	# 	print str(e)
-	# 	raw_input()
+		#print app.get_article_image()
+		
+		app.quit()
+		del db
+		del ftp
+		raw_input()
+	except KeyboardInterrupt:
+	 	raw_input()
+	 	del db
+	 	del ftp
+
 
 
 
