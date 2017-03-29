@@ -100,7 +100,7 @@ class interface(Linker):
 		name = name[len(name)-1]
 		with open("jiongtu/%s" % name, "wb") as f:
 			f.write(response.read())
-		self.notice_ins.print_notice('get_picture',link+';'+name)
+		self.notice_ins.print_notice('get_picture',link+'->'+name)
 		# print("link:"+link+" file:"+name)
 		return name
 
@@ -196,11 +196,12 @@ if __name__ == '__main__':
 					detailtxts=[]
 					details = app.GetDetail(pageId)
 					for detail in details:
-						error_notice.print_notice('detail_r',str(detail))
 						rs = db.Model('detailtxt').field('max(detail_id)').select()
 						max_detail_id = int(rs[0][0])
 						detail['detail_id'] = str(max_detail_id+10).zfill(8)
 						if(detail['type']=='txt'):
+							error_notice.print_notice('detail_r',str(detail))
+							error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 							rs = db.Model('detailtxt').insert(detail)
 							error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
 						elif(detail['type']=='img'):
@@ -211,7 +212,8 @@ if __name__ == '__main__':
 							rs = db.Model('downimage').insert(downimage)
 							error_notice.print_notice('result',"do get downimage result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 							error_notice.print_notice('lastsql',db.Model('downimage').option['lastsql'])
-							detail['detail']= ''
+							del detail['detail']
+							error_notice.print_notice('detail_r',str(detail))
 							rs = db.Model('detailtxt').insert(detail)
 						error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 						error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
