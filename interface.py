@@ -203,7 +203,6 @@ if __name__ == '__main__':
 							error_notice.print_notice('detail_r',str(detail))
 							error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 							rs = db.Model('detailtxt').insert(detail)
-							error_notice.print_notice('lastsql',db.Model('detailtxt').option['lastsql'])
 						elif(detail['type']=='img'):
 							downimage={}
 							downimage['detail_id']=detail['detail_id']
