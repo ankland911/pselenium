@@ -239,6 +239,9 @@ if __name__ == '__main__':
 						rs = db.Model('downimage').where(where).update(data)
 						error_notice.print_notice('change','downimage path:'+str(rs) + '  '+detailtxt[0]+'   '+data['path'])
 						# print 'change downimage path'+str(rs) + '  '+detailtxt[0]+'   '+data['path']
+				where={}
+				where['page_id'] = pageId
+				db.Model('pages').where(where).update({'date':mytime.mtime()})
 			#print "result : %s" % rs
 			#print db.Model('article_links').option['lastsql']
 
