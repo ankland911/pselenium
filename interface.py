@@ -201,7 +201,6 @@ if __name__ == '__main__':
 						detail['detail_id'] = str(max_detail_id+10).zfill(8)
 						if(detail['type']=='txt'):
 							error_notice.print_notice('detail_r',str(detail))
-							error_notice.print_notice('result',"do get detail result="+str(bool(rs))+"; detail_id="+detail['detail_id']+"; type="+detail['type'])
 							rs = db.Model('detailtxt').insert(detail)
 						elif(detail['type']=='img'):
 							downimage={}
