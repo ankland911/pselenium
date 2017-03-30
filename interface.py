@@ -75,14 +75,14 @@ class interface(Linker):
 					Details.append({'type':'txt','Page_id':pageid,'detail':D.text})
 		return Details
 
-	def GetPages(self,article_id):
+	def GetPages(self,article_id,db):
 		pages = []
 		data={}
 		lists = self.webbrowser.find_element_by_id("pages").find_elements_by_tag_name("a")
 		for p in lists:
 			data['link'] = p.get_attribute("href")
 			data['category'] = '0' 
-			max_page_id = M('pages').field('max(page_id)').select()
+			max_page_id = db.Model('pages').field('max(page_id)').select()
 			data['page_id'] = str(int(max_page_id[0][0])+10).zfill(8)
 			data['article_id'] = article_id
 			pages.append(data)
@@ -160,11 +160,11 @@ if __name__ == '__main__':
 		for article_link in article_links:
 			article_id = article_link[1]
 			error_notice.print_notice('start',("article id=%s" % article_id))
+			app.Get(article_link[0])
 			if(article_link[2]!=None):
 				error_notice.print_notice('articleLinks',("article id %s is not Null" % article_id))
 			else:
 				# print "   start:    article id=%s" % article_id
-				app.Get(article_link[0])
 				data['detail']=app.get_article_description()
 				data['title']=app.get_article_title()
 				image_name = app.get_picture(app.get_article_image())
@@ -178,10 +178,11 @@ if __name__ == '__main__':
 			# step 2:
 			pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\' and UNIX_TIMESTAMP(\'%s\')-UNIX_TIMESTAMP(date)>864000" % (article_id,mytime.mtime())))
 			if(pages==()):
-				rs = app.GetPages(article_id)
+				rs = app.GetPages(article_id,db)
 				for r in rs:
 					rs = db.Model('pages').insert(r)
 					error_notice.print_notice('insertPages',r['page_id'])
+					error_notice.print_notice('lastsql',db.Model('pages').option['lastsql'])
 				pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\'" % article_id))
 
 
