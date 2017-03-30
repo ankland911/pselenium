@@ -154,25 +154,29 @@ if __name__ == '__main__':
 		mytime = Time()
 		db = MyDb({"host":"ankland911.gotoip3.com","user":"ankland911","pass":"kuailong88","db":"ankland911"},error_notice)
 		# step 1:
-		article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links where day(\'%s\')-day(date)>10 or imagepath is null" % mytime.mtime())
+		#article_links = db.Model("article_links").SQL("select copy_link,article_id from article_links where day(\'%s\')-day(date)>10 or imagepath is null" % mytime.mtime())
+		article_links = db.Model("article_links").SQL("select copy_link,article_id,imagepath from article_links")
 		# print db.Model("article_links").option['lastsql']
 		for article_link in article_links:
 			article_id = article_link[1]
 			error_notice.print_notice('start',("article id=%s" % article_id))
-			# print "   start:    article id=%s" % article_id
-			app.Get(article_link[0])
-			data['detail']=app.get_article_description()
-			data['title']=app.get_article_title()
-			image_name = app.get_picture(app.get_article_image())
-			file_handle = open("jiongtu/%s" % image_name,"r")
-			ftp.ftp_upload(file_handle,image_name)
-			data['imagepath'] = '/Public/jiongtu/%s' % image_name
-			where['article_id'] = article_id
-			data['date'] = mytime.mtime()
-			rs = db.Model('article_links').where(where).update(data)
+			if(article_link[2]!=None):
+				error_notice.print_notice('articleLinks',("article id %s is not Null" % article_id))
+			else:
+				# print "   start:    article id=%s" % article_id
+				app.Get(article_link[0])
+				data['detail']=app.get_article_description()
+				data['title']=app.get_article_title()
+				image_name = app.get_picture(app.get_article_image())
+				file_handle = open("jiongtu/%s" % image_name,"r")
+				ftp.ftp_upload(file_handle,image_name)
+				data['imagepath'] = '/Public/jiongtu/%s' % image_name
+				where['article_id'] = article_id
+				data['date'] = mytime.mtime()
+				rs = db.Model('article_links').where(where).update(data)
 
 			# step 2:
-			pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\'" % article_id))
+			pages = db.Model('pages').SQL(("select link,page_id from pages where article_id=\'%s\' and UNIX_TIMESTAMP(\'%s\')-UNIX_TIMESTAMP(date)>864000" % (article_id,mytime.mtime())))
 			if(pages==()):
 				rs = app.GetPages(article_id)
 				for r in rs:
