@@ -3,16 +3,20 @@ import MySQLdb
 
 class MyDb:
 	model = {}
-	def __init__(self,db_owner,error_notice):
+	def __init__(self,db_owner):
 		self.db_owner = db_owner
-		self.notice_ins = error_notice
-		try:			
-			self.Db = MySQLdb.connect(host=db_owner["host"],user=db_owner["user"],passwd=db_owner["pass"],db=db_owner["db"],charset="utf8")
+		try:	
+			self.connect()
 			self.Cursor = self.Db.cursor()
-			self.notice_ins.print_notice('initial','create a MyDb instance OK...')
-			# print "initial:     create a MyDb instance OK..."
 		except Exception, e:
-			print e
+			print str(e)
+
+	def connect(self):
+		try:		
+			self.Db = MySQLdb.connect(host=self.db_owner["host"],user=self.db_owner["user"],passwd=self.db_owner["pass"],db=self.db_owner["db"],charset="utf8")
+		except Exception,e:
+			print str(e)
+			exit()	
 	def Model(self,model_name):
 		if not (self.model.has_key(model_name)):
 			self.model[model_name] = Model(model_name,self)
@@ -20,20 +24,29 @@ class MyDb:
 
 class Model:
 	def __init__(self,table_name,mydb):
+		self.MaxRedo = 3
+		self.Redo = 0
 		self.TABLE_NAME = table_name
 		self.WHERE = ""
 		self.FIELD = "*"
 		self.option = {}
+		self.option['lastsql'] = ''
 		self.mydb = mydb
 		self._getFields()
 
 	def _getFields(self):
+		try:
 			self.option['fields'] = []
-			rs = self.mydb.Cursor.execute("SHOW COLUMNS FROM %s" % self.TABLE_NAME) 
+			# rs = self.mydb.Cursor.execute("SHOW COLUMNS FROM %s" % self.TABLE_NAME)
+			sql = "SHOW COLUMNS FROM %s" % self.TABLE_NAME
+			rs = self.query(sql)
 			if(rs):
 				Result = self.mydb.Cursor.fetchall()
-			for line in Result:
-				self.option['fields'].append(line[0])
+				for line in Result:
+					self.option['fields'].append(line[0])
+		except Exception,e:
+			print str(e)
+			exit()
 
 	def field(self,fields):
 		if(isinstance(fields,str)):
@@ -59,7 +72,6 @@ class Model:
 		sql = "select %s from %s" % (self.FIELD,self.TABLE_NAME)
 		if(self.WHERE != ""):
 			sql += " where %s" % (self.WHERE)
-		#print sql
 		self.query(sql)
 		return self.mydb.Cursor.fetchall()
 
@@ -76,13 +88,9 @@ class Model:
 		_set = ",".join(_data)
 		sql += _set
 		sql+=" where %s" % (self.WHERE)
-		rs = self.query(sql)
-		self.mydb.Db.commit()
+		rs = self.query_commit(sql)
+		# self.mydb.Db.commit()
 		return rs
-
-	# def Exist(self,values={}):
-	# 	if not (isinstance(values,dict)):
-	# 		return False
 
 	def insert(self,values={}):
 		if not (isinstance(values,dict)):
@@ -95,8 +103,7 @@ class Model:
 			_value.append("'%s'" % (values[key]))
 		sql+="(%s) values (%s)" % (",".join(_key),",".join(_value))
 		#print sql
-		rs = self.query(sql)
-		self.mydb.Db.commit()
+		rs = self.query_commit(sql)
 		return rs
 
 	def count(self):
@@ -111,24 +118,42 @@ class Model:
 		sql = "delete from %s" % (self.TABLE_NAME)
 		if(self.WHERE != ""):
 			sql+=" where %s" % (self.WHERE)
-		rs = self.query(sql)
-		self.mydb.Db.commit()
+		rs = self.query_commit(sql)
+		# self.mydb.Db.commit()
 		return rs
 
 	def query(self,sql):
 		try:
 		 	rs = self.mydb.Cursor.execute(sql)
+		 	if(rs):
+		 		self.Redo = 0
+		 	self.option['lastsql'] = sql
 			self.WHERE = ""
 			self.FIELD = "*"
 			return rs
-		except MySQLdb.Error as e:
-			if 'MySQL server has gone away' in str(e):
-				self.mydb(self.db_owner)
+		except Exception as e:
+			self.Redo = self.Redo + 1
+			if self.Redo > self.MaxRedo:
+				exit()
+			if 'gone away' in str(e):
+				self.mydb.connect()
 				print "Mysql gone away but I had reconnect..."
 				self.query(sql)
+			elif 'Lost Connect' in str(e):
+				self.mydb.connect()
+				print "Mysql gone away but I had reconnect..."
+				self.query(sql)
+			else:
+				print str(e)
+			# self.query(sql)
+
+	def query_commit(self,sql):
+		try:
+		 	self.query(sql)
+			self.mydb.Db.commit()
+		 	self.option['lastsql'] = sql
+			self.WHERE = ""
+			self.FIELD = "*"
+			return rs
 		except Exception as e:
 			print str(e)
-
-
-#app = MyDb({"host":"localhost","user":"root","pass":"","db":"ankland911"})
-#rs = app.Model('categorys').where('id=0').update({'title':'test1','detail':'test1'})
