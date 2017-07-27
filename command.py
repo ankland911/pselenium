@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
-from Linker import Linker as lk
-from db import Model
+from lib.Linker import Linker as lk
+from lib.db import Model
 
 def M(table_name):
 	global arrModel
@@ -23,16 +23,19 @@ def get_ranks(web):
     rank_lst['1y'] = ranks[5].text
     rank_lst['2y'] = ranks[6].text
     rank_lst['3y'] = ranks[7].text
+    prt=''
     for name in rank_lst:
-        print rank_lst[name]
+        prt = prt + "," + rank_lst[name]
+    print prt
     return rank_lst
 
 		
 if __name__ == '__main__':
-    urls = M('fund').where({'id':'1'}).select()
-    M('fund').sql_exec("update fund set `fund_code`='161724' where `id`='1'")
-    M('fund').db.Db.close()
-    exit(0)
+    urls = M('fund').where('id>348').select()
+    #afd = Model('config').sql_exec("insert into config (opt,value) values ('test','test')")
+    #print afd
+    #print Model('config').db.Db.commit()
+    #exit(0)
     web = lk()
     for url in urls:
         web.Get(url[1])
@@ -41,11 +44,19 @@ if __name__ == '__main__':
         fund_code = web.webbrowser.find_element_by_class_name("ui-num").text
         print fund_code
         rs = M('fund').where({'id':fid}).update({'fund_code':fund_code})
-        print rs,";",M('fund').LastSql
+        try:
+            rs = M('fund_links').insert({'fund_code':fund_code})
+        except:
+            pass
         rs = M('fund').where({'id':fid}).update(get_ranks(web))
-        print rs,";",M('fund').LastSql
         site = web.webbrowser.find_element_by_class_name("fundDetail-footer")
         lst = site.find_elements_by_tag_name("a")
+        del lst[0]
+        data={}
         for ls in lst:
-            print ls.text
+            href = ls.get_attribute("href")
+            print ls.text,";",href
+            data[ls.text.encode('utf-8')] = href.encode('utf-8')
+        rs = M('fund_links').where({'fund_code':fund_code.encode('utf-8')}).update(data)
     raw_input()
+
