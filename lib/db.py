@@ -14,6 +14,7 @@ class db(object):
 	def connect(self):
 		try:
 			self.Db = MySQLdb.connect(host=self.db_owner["host"],user=self.db_owner["user"],passwd=self.db_owner["pass"],db=self.db_owner["db"],charset="utf8")
+		self.Cursor = self.Db.cursor()
 		except Exception,e:
 			traceback.print_exc()
 
