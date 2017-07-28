@@ -31,32 +31,34 @@ def get_ranks(web):
 
 		
 if __name__ == '__main__':
-    urls = M('fund').where('id>348').select()
-    #afd = Model('config').sql_exec("insert into config (opt,value) values ('test','test')")
-    #print afd
-    #print Model('config').db.Db.commit()
-    #exit(0)
+    urls = M('fund').where('id>1358').select()
     web = lk()
     for url in urls:
-        web.Get(url[1])
-        fid = url[0]
-        print "id:",fid
-        fund_code = web.webbrowser.find_element_by_class_name("ui-num").text
-        print fund_code
-        rs = M('fund').where({'id':fid}).update({'fund_code':fund_code})
         try:
-            rs = M('fund_links').insert({'fund_code':fund_code})
-        except:
-            pass
-        rs = M('fund').where({'id':fid}).update(get_ranks(web))
-        site = web.webbrowser.find_element_by_class_name("fundDetail-footer")
-        lst = site.find_elements_by_tag_name("a")
-        del lst[0]
-        data={}
-        for ls in lst:
-            href = ls.get_attribute("href")
-            print ls.text,";",href
-            data[ls.text.encode('utf-8')] = href.encode('utf-8')
-        rs = M('fund_links').where({'fund_code':fund_code.encode('utf-8')}).update(data)
+            web.Get(url[1])
+            fid = url[0]
+            print "id:",fid
+            fund_code = web.webbrowser.find_element_by_class_name("ui-num").text
+            print fund_code
+            rs = M('fund').where({'id':fid}).update({'fund_code':fund_code})
+            try:
+                rs = M('fund_links').insert({'fund_code':fund_code})
+            except:
+                pass
+            rs = M('fund').where({'id':fid}).update(get_ranks(web))
+            site = web.webbrowser.find_element_by_class_name("fundDetail-footer")
+            lst = site.find_elements_by_tag_name("a")
+            del lst[0]
+            data={}
+            for ls in lst:
+                href = ls.get_attribute("href")
+                print ls.text,";",href
+                data[ls.text.encode('utf-8')] = href.encode('utf-8')
+            rs = M('fund_links').where({'fund_code':fund_code.encode('utf-8')}).update(data)
+        except Exception,e:
+            print str(e)
+            del web
+            web = lk()
+            continue
     raw_input()
 
