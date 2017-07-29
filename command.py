@@ -31,7 +31,7 @@ def get_ranks(web):
 
 		
 if __name__ == '__main__':
-    urls = M('fund').where('id>1358').select()
+    urls = M('fund').where('1w=\'\'').select()
     web = lk()
     for url in urls:
         try:
