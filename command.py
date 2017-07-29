@@ -26,7 +26,7 @@ def get_ranks(web):
     prt=''
     for name in rank_lst:
         prt = prt + "," + rank_lst[name]
-    print prt
+    print prt.encode('utf-8')
     return rank_lst
 
 		
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             data={}
             for ls in lst:
                 href = ls.get_attribute("href")
-                print ls.text,";",href
+                print ls.text.encode('utf-8'),";",href.encode('utf-8')
                 data[ls.text.encode('utf-8')] = href.encode('utf-8')
             rs = M('fund_links').where({'fund_code':fund_code.encode('utf-8')}).update(data)
         except Exception,e:
