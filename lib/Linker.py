@@ -7,8 +7,9 @@ class Linker(object):
 
 	def __init__(self):
 		# self.webbrowser = webdriver.Firefox()
-		self.webbrowser = webdriver.PhantomJS(executable_path="/Users/leizhang/Downloads/phantomjs-2.1.1-macosx/bin/phantomjs")
-		executable_path="/Users/leizhang/Downloads/phantomjs-2.1.1-macosx/bin/phantomjs"
+		executable_path="/home/ec2-user/phantomjs-2.1.1-linux-i686/bin/phantomjs"
+		self.webbrowser = webdriver.PhantomJS(executable_path)
+		
 
 	def quit(self):
 		self.webbrowser.quit()
